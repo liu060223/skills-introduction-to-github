@@ -1,0 +1,84 @@
+import time
+
+from PIL import Image
+import io
+import base64
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+import ddddocr
+from sympy.codegen.fnodes import use_rename
+
+
+
+
+
+def nun(username,password):
+    driver = webdriver.Edge()
+    driver.get(url)
+    wait = WebDriverWait(driver, 10)
+
+    username_=driver.find_element(By.ID, "username")
+    password_=driver.find_element(By.ID, "password")
+
+
+
+    wait.until(EC.element_to_be_clickable((By.NAME, "username"))).send_keys(username)
+    wait.until(EC.element_to_be_clickable((By.NAME, "password"))).send_keys(password)
+    captcha_img = wait.until(EC.presence_of_element_located((By.ID, "yzmPic")))
+    js_code = """
+    function getCaptchaBase64() {
+        // 获取验证码图片元素
+        const img = document.getElementById('yzmPic');
+        // 创建Canvas元素
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        // 设置Canvas尺寸与图片一致
+        canvas.width = img.offsetWidth;
+        canvas.height = img.offsetHeight;
+        // 将页面上显示的图片绘制到Canvas
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        // 转为Base64格式（含图片头）
+        return canvas.toDataURL('image/png');
+    }
+    return getCaptchaBase64();
+    """
+
+
+    base64_data = driver.execute_script(js_code)
+    img_base64 = base64_data.split(',')[1]
+
+    img_bytes = base64.b64decode(img_base64)
+    img = Image.open(io.BytesIO(img_bytes))
+
+
+    ocr = ddddocr.DdddOcr()
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr, format='PNG')
+    result = ocr.classification(img_byte_arr.getvalue())
+    print(f'验证码识别结果{result}')
+
+    wait.until(EC.element_to_be_clickable((By.ID, 'authcode'))).send_keys(result)
+
+    wait.until(EC.element_to_be_clickable(
+        (By.CSS_SELECTOR, ".btn.btn-block.btn-primary.login-btn")
+    )).click()
+    kun=int(3)
+    if driver.current_url =='http://sso.nun.edu.cn/cas/login?service=https%3A%2F%2Fhall.nmu.edu.cn%2FEIP%2Fcaslogin.jsp':
+        time.sleep(kun)
+        username_.clear()
+        password_.clear()
+
+
+
+
+    input("操作完成，按任意键关闭浏览器...")
+    driver.quit()
+
+
+if __name__ == '__main__':
+    import 用户数据
+    sum1=用户数据.generate_random_users(100)
+    url = "http://sso.nun.edu.cn/cas/login?service=https%3A%2F%2Fhall.nmu.edu.cn%2FEIP%2Fcaslogin.jsp"
+    nun('2024','i')
